@@ -86,10 +86,22 @@ type Property struct {
 	NeedsFormTag  bool
 	Extensions    map[string]interface{}
 	Deprecated    bool
+
+	// A cache for the computed go field name, filled in GoFieldName.
+	goFieldName string
 }
 
-func (p Property) GoFieldName() string {
-	return SchemaNameToTypeName(p.JsonFieldName)
+func (p *Property) GoFieldName() string {
+	if p.goFieldName == "" {
+		// Use the name defined by the x-go-name extension, if provided
+		if extGoFieldName, err := extParseGoFieldName(p.Extensions[extGoName]); err == nil {
+			p.goFieldName = extGoFieldName
+		} else {
+			p.goFieldName = SchemaNameToTypeName(p.JsonFieldName)
+		}
+	}
+
+	return p.goFieldName
 }
 
 func (p Property) GoTypeDef() string {
